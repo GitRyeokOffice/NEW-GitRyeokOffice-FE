@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { users } from '../../mocks/users';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { users } from "../../mocks/users";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     const user = users.find(
       (u) => u.email === email && u.password === password
     );
 
     if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem("currentUser", JSON.stringify(user));
       // Dispatch event to update Navbar immediately
-      window.dispatchEvent(new Event('userLogin'));
-      navigate('/');
+      window.dispatchEvent(new Event("userLogin"));
+      navigate("/");
     } else {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
   };
 
@@ -108,20 +108,13 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="text-center">
             <p className="text-gray-400">
-              계정이 없으신가요?{' '}
+              계정이 없으신가요?{" "}
               <a
                 href="/signup"
                 className="text-neon-green hover:underline cursor-pointer whitespace-nowrap"
               >
                 회원가입
               </a>
-            </p>
-          </div>
-
-          {/* Demo Info */}
-          <div className="mt-6 p-4 bg-neon-green/10 border border-neon-green/20 rounded-lg">
-            <p className="text-xs text-gray-300 text-center">
-              <strong className="text-neon-green">데모 계정:</strong> test@devmatch.com / test1234
             </p>
           </div>
         </div>
