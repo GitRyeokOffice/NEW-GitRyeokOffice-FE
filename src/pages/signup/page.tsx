@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { users } from "../../mocks/users";
 import type { User } from "../../mocks/users";
-import { getDevVibeByCode } from "../../mocks/devVibes";
+import { getDevVibeByCode, devVibeTypes } from "../../mocks/devVibes";
 import { useDevVibe } from "@/hooks/useDevVibe";
 import { calcDevVibe } from "../../lib/calcDevVibe";
 import { useNavigate } from "react-router-dom";
+import designIcon from '@/assets/DESIGN.png';
+import planningIcon from '@/assets/PLANNING.png';
 
 function toDashed(code: string) {
   if (code.includes("-")) return code;
@@ -164,6 +166,8 @@ export default function SignupPage() {
       organization: formData.organization,
       devVibeCode: finalCode,
       isNewbie: false,
+      availableForProject: true,
+      isTeamLeader: false,
     };
 
     users.push(newUser);
@@ -235,6 +239,8 @@ export default function SignupPage() {
         projectExperience: projectExp,
         organization: formData.organization,
         isNewbie: projectExp === 0,
+        availableForProject: true,
+        isTeamLeader: false,
       };
 
       users.push(newUser);
@@ -260,6 +266,8 @@ export default function SignupPage() {
         projectExperience: projectExp,
         organization: formData.organization,
         isNewbie: true,
+        availableForProject: true,
+        isTeamLeader: false,
       };
 
       users.push(newUser);
@@ -333,9 +341,13 @@ export default function SignupPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
-              className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <i className="ri-check-line text-5xl text-purple-500" />
+              <img 
+                src={formData.role === "designer" ? designIcon : planningIcon}
+                alt={formData.role === "designer" ? "디자이너" : "기획자"}
+                className="w-full h-full object-contain p-3"
+              />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -362,13 +374,11 @@ export default function SignupPage() {
             className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 rounded-2xl p-8 mb-8"
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl">
-                <i
-                  className={`text-3xl text-purple-500 ${
-                    formData.role === "designer"
-                      ? "ri-palette-line"
-                      : "ri-lightbulb-line"
-                  }`}
+              <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl overflow-hidden bg-white/5">
+                <img 
+                  src={formData.role === "designer" ? designIcon : planningIcon}
+                  alt={formData.role === "designer" ? "디자이너" : "기획자"}
+                  className="w-full h-full object-contain p-2"
                 />
               </div>
               <div>
@@ -468,9 +478,13 @@ export default function SignupPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
-              className="w-24 h-24 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-24 h-24 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <i className="ri-check-line text-5xl text-neon-green" />
+              <img 
+                src={devVibeData.icon}
+                alt={devVibeData.title}
+                className="w-full h-full object-contain p-3"
+              />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -497,7 +511,13 @@ export default function SignupPage() {
             className="bg-gradient-to-br from-neon-green/10 to-neon-green/5 border-2 border-neon-green/30 rounded-2xl p-8 mb-8"
           >
             <div className="flex items-center gap-6 mb-6 pb-6 border-b border-white/10">
-              <div className="text-7xl">{devVibeData.emoji}</div>
+              <div className="w-20 h-20 flex items-center justify-center rounded-2xl overflow-hidden bg-white/5">
+                <img 
+                  src={devVibeData.icon}
+                  alt={devVibeData.title}
+                  className="w-full h-full object-contain p-2"
+                />
+              </div>
               <div className="flex-1">
                 <div className="text-base text-neon-green font-mono mb-2">
                   {devVibeData.code}
@@ -567,9 +587,13 @@ export default function SignupPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
-              className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+              className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <i className="ri-seedling-line text-5xl text-green-500" />
+              <img 
+                src={devVibeTypes.NEWBIE.icon}
+                alt="새싹 개발자"
+                className="w-full h-full object-contain p-3"
+              />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -596,8 +620,12 @@ export default function SignupPage() {
             className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-2xl p-8 mb-8"
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 flex items-center justify-center bg-green-500/20 rounded-2xl">
-                <i className="ri-seedling-line text-3xl text-green-500" />
+              <div className="w-16 h-16 flex items-center justify-center bg-green-500/20 rounded-2xl overflow-hidden bg-white/5">
+                <img 
+                  src={devVibeTypes.NEWBIE.icon}
+                  alt="새싹 개발자"
+                  className="w-full h-full object-contain p-2"
+                />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white">새싹 개발자</h3>
