@@ -1,5 +1,6 @@
 
 import { Job } from '../../../mocks/jobs';
+import { devVibeTypes } from '../../../mocks/devVibes';
 
 interface JobCardProps {
   job: Job;
@@ -8,6 +9,21 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, isRecommended, onClick }: JobCardProps) {
+  // creatorDevVibe에서 devVibe 코드 추출 (예: "차분한 설계자 (PSM)" -> "P-S-M")
+  const getDevVibeCode = (creatorDevVibe?: string): string | null => {
+    if (!creatorDevVibe) return null;
+    const match = creatorDevVibe.match(/\(([A-Z]{3})\)/);
+    if (match) {
+      const code = match[1]; // "PSM"
+      // "PSM" -> "P-S-M" 형식으로 변환
+      return `${code[0]}-${code[1]}-${code[2]}`;
+    }
+    return null;
+  };
+
+  const devVibeCode = getDevVibeCode(job.creatorDevVibe);
+  const devVibe = devVibeCode ? devVibeTypes[devVibeCode] : null;
+  const creatorIcon = devVibe?.icon || "https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png";
   return (
     <div 
       onClick={onClick}
@@ -36,11 +52,11 @@ export default function JobCard({ job, isRecommended, onClick }: JobCardProps) {
 
       {/* Creator Info */}
       <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-700">
-        <div className="w-10 h-10 rounded-full overflow-hidden">
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
           <img 
-            src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png" 
+            src={creatorIcon} 
             alt={job.creatorName}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-1"
           />
         </div>
         <div>

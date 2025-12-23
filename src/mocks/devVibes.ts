@@ -1,3 +1,12 @@
+import ifmIcon from '@/assets/IFM.png';
+import ifnIcon from '@/assets/IFN.png';
+import psmIcon from '@/assets/PSM.png';
+import psnIcon from '@/assets/PSN.png';
+import pfmIcon from '@/assets/PFM.png';
+import pfnIcon from '@/assets/PFN.png';
+import ismIcon from '@/assets/ISM.png';
+import isnIcon from '@/assets/ISN.png';
+import newbieIcon from '@/assets/NEWBIE.png';
 
 export interface DevVibeType {
   code: string;
@@ -17,7 +26,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'P-S-M',
     title: '차분한 설계자',
     emoji: '🐜',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: psmIcon,
     traits: {
       planning: '계획형',
       work: '혼자',
@@ -29,7 +38,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'P-S-N',
     title: '고요한 축적가',
     emoji: '🦫',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: psnIcon,
     traits: {
       planning: '계획형',
       work: '혼자',
@@ -41,7 +50,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'P-F-M',
     title: '집요한 분석가',
     emoji: '🦅',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: pfmIcon,
     traits: {
       planning: '계획형',
       work: '함께',
@@ -53,7 +62,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'P-F-N',
     title: '냉철한 전략가',
     emoji: '🦉',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: pfnIcon,
     traits: {
       planning: '계획형',
       work: '함께',
@@ -65,7 +74,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'I-S-M',
     title: '유연한 항해자',
     emoji: '🐿️',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: ismIcon,
     traits: {
       planning: '즉흥형',
       work: '혼자',
@@ -77,7 +86,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'I-S-N',
     title: '느긋한 반복자',
     emoji: '🐱',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: isnIcon,
     traits: {
       planning: '즉흥형',
       work: '혼자',
@@ -89,7 +98,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'I-F-M',
     title: '번뜩이는 개척자',
     emoji: '🐎',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: ifmIcon,
     traits: {
       planning: '즉흥형',
       work: '함께',
@@ -101,7 +110,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'I-F-N',
     title: '은밀한 해결사',
     emoji: '🐆',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: ifnIcon,
     traits: {
       planning: '즉흥형',
       work: '함께',
@@ -113,7 +122,7 @@ export const devVibeTypes: Record<string, DevVibeType> = {
     code: 'NEWBIE',
     title: '새싹 개발자',
     emoji: '🌱',
-    icon: 'https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png',
+    icon: newbieIcon,
     traits: {
       planning: '성장중',
       work: '배우는중',

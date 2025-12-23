@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { User } from '../../../mocks/users';
 import { devVibeTypes } from '../../../mocks/devVibes';
+import designIcon from '@/assets/DESIGN.png';
+import planningIcon from '@/assets/PLANNING.png';
 
 interface UserCardProps {
   user: User;
@@ -14,6 +16,20 @@ const UserCard = ({ user, canInvite, isRecommended }: UserCardProps) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   const devVibe = user.devVibeCode ? devVibeTypes[user.devVibeCode] : null;
+  
+  // 역할에 따라 아이콘 결정
+  const getUserIcon = (): string => {
+    if (user.role === 'designer') {
+      return designIcon;
+    } else if (user.role === 'planner') {
+      return planningIcon;
+    } else {
+      // developer는 devVibe 아이콘 사용
+      return devVibe?.icon || "https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png";
+    }
+  };
+  
+  const userIcon = getUserIcon();
 
   const roleMap: Record<string, { label: string; color: string; icon: string }> = {
     developer: { label: '개발자', color: 'from-blue-500 to-indigo-500', icon: 'ri-code-line' },
@@ -47,11 +63,11 @@ const UserCard = ({ user, canInvite, isRecommended }: UserCardProps) => {
         <div className="p-6">
           {/* 프로필 헤더 */}
           <div className="flex items-start gap-4 mb-4">
-            <div className={`w-16 h-16 flex items-center justify-center bg-gradient-to-br ${roleInfo.color} rounded-xl flex-shrink-0 overflow-hidden`}>
+            <div className={`w-16 h-16 flex items-center justify-center bg-gradient-to-br ${roleInfo.color} rounded-xl flex-shrink-0 overflow-hidden bg-white/5`}>
               <img 
-                src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png"
+                src={userIcon}
                 alt={user.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-2"
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -220,11 +236,11 @@ const UserCard = ({ user, canInvite, isRecommended }: UserCardProps) => {
               {/* 헤더 */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-start gap-4">
-                  <div className={`w-20 h-20 flex items-center justify-center bg-gradient-to-br ${roleInfo.color} rounded-xl overflow-hidden`}>
+                  <div className={`w-20 h-20 flex items-center justify-center bg-gradient-to-br ${roleInfo.color} rounded-xl overflow-hidden bg-white/5`}>
                     <img 
-                      src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png"
+                      src={userIcon}
                       alt={user.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
                   <div>
