@@ -1,57 +1,63 @@
+import { lazy } from "react";
+import { RouteObject } from "react-router-dom";
 
-import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
-
-const HomePage = lazy(() => import('../pages/home/page'));
-const DevVibePage = lazy(() => import('../pages/devvibe/page'));
-const JobsPage = lazy(() => import('../pages/jobs/page'));
-const CreateJobPage = lazy(() => import('../pages/jobs/create/page'));
-const FindTeammatesPage = lazy(() => import('../pages/find-teammates/page'));
-const MyProjectsPage = lazy(() => import('../pages/my-projects/page'));
-const ProjectDetailPage = lazy(() => import('../pages/my-projects/detail/page'));
-const LoginPage = lazy(() => import('../pages/login/page'));
-const SignupPage = lazy(() => import('../pages/signup/page'));
-const NotFoundPage = lazy(() => import('../pages/NotFound'));
+const HomePage = lazy(() => import("../pages/home/page"));
+const DevVibePage = lazy(() => import("../pages/devvibe/page"));
+const JobsPage = lazy(() => import("../pages/jobs/page"));
+const CreateJobPage = lazy(() => import("../pages/jobs/create/page"));
+const FindTeammatesPage = lazy(() => import("../pages/find-teammates/page"));
+const MyProjectsPage = lazy(() => import("../pages/my-projects/page"));
+const ProjectDetailPage = lazy(
+  () => import("../pages/my-projects/detail/page")
+);
+const LoginPage = lazy(() => import("../pages/login/page"));
+const SignupPage = lazy(() => import("../pages/signup/page"));
+const NotFoundPage = lazy(() => import("../pages/NotFound"));
+const TeamInfoPage = lazy(() => import("../pages/team-info/page"));
 
 const routes: RouteObject[] = [
   {
-    path: '/',
+    path: "/",
     element: <HomePage />,
   },
   {
-    path: '/devvibe',
+    path: "/devvibe",
     element: <DevVibePage />,
   },
   {
-    path: '/jobs',
+    path: "/jobs",
     element: <JobsPage />,
   },
   {
-    path: '/jobs/create',
+    path: "/jobs/create",
     element: <CreateJobPage />,
   },
   {
-    path: '/find-teammates',
+    path: "/find-teammates",
     element: <FindTeammatesPage />,
   },
   {
-    path: '/my-projects',
+    path: "/my-projects",
     element: <MyProjectsPage />,
   },
   {
-    path: '/my-projects/:projectId',
+    path: "/my-projects/:projectId",
     element: <ProjectDetailPage />,
   },
   {
-    path: '/login',
+    path: "/login",
     element: <LoginPage />,
   },
   {
-    path: '/signup',
+    path: "/signup",
     element: <SignupPage />,
   },
   {
-    path: '*',
+    path: "/teaminfo",
+    element: <TeamInfoPage />,
+  },
+  {
+    path: "*",
     element: <NotFoundPage />,
   },
 ];
