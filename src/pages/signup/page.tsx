@@ -6,13 +6,27 @@ import { getDevVibeByCode, devVibeTypes } from "../../mocks/devVibes";
 import { useDevVibe } from "@/hooks/useDevVibe";
 import { calcDevVibe } from "../../lib/calcDevVibe";
 import { useNavigate } from "react-router-dom";
-import designIcon from '@/assets/DESIGN.png';
-import planningIcon from '@/assets/PLANNING.png';
-
+import designIcon from "@/assets/DESIGN.png";
+import planningIcon from "@/assets/PLANNING.png";
 function toDashed(code: string) {
   if (code.includes("-")) return code;
   if (code.length !== 3) return code;
   return `${code[0]}-${code[1]}-${code[2]}`;
+}
+
+// ✅ 추가: 지연 유틸
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+// ✅ 추가: 에러를 항상 문자열로 바꾸기 (DevTools installHook 에러 방지용)
+function toErrorMessage(err: unknown) {
+  if (err instanceof Error) return err.message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
 }
 
 export default function SignupPage() {
@@ -121,61 +135,64 @@ export default function SignupPage() {
   useEffect(() => {
     if (!isAnalyzing) return;
     if (!queryUsername) return;
-
     if (devVibeLoading) return;
 
-    if (devVibeError) {
+    let cancelled = false;
+
+    (async () => {
+      // ✅ 핵심: 최소 2초는 분석 화면 유지
+      await delay(2000);
+      if (cancelled) return;
+
+      if (devVibeError) {
+        setIsAnalyzing(false);
+        setError(`GitHub 분석 실패: ${toErrorMessage(devVibeError)}`);
+        setQueryUsername(null);
+        return;
+      }
+
+      if (!devVibeRaw) return;
+
+      const vibe = calcDevVibe(devVibeRaw);
+      if (!vibe) {
+        setIsAnalyzing(false);
+        setError(
+          "Dev-Vibe 계산 실패: GitHub 데이터가 비어있거나 구조가 다릅니다."
+        );
+        setQueryUsername(null);
+        return;
+      }
+
+      const finalCode = toDashed(vibe.code); // "P-S-M" 형태로 통일
+
+      // ✅ 사용자 생성 (mock)
+      const projectExp = parseInt(formData.projectExperience) || 0;
+
+      const newUser: User = {
+        id: String(users.length + 1),
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        githubUsername: formData.githubUsername,
+        role: formData.role,
+        techStacks: allTechStack,
+        projectExperience: projectExp,
+        organization: formData.organization,
+        devVibeCode: finalCode,
+        isNewbie: false,
+      };
+
+      users.push(newUser);
+
+      setAnalyzedDevVibe(finalCode);
       setIsAnalyzing(false);
-      setError(
-        `GitHub 분석 실패: ${
-          devVibeError instanceof Error
-            ? devVibeError.message
-            : String(devVibeError)
-        }`
-      );
+      setSuccess(true);
       setQueryUsername(null);
-      return;
-    }
+    })();
 
-    if (!devVibeRaw) return;
-
-    const vibe = calcDevVibe(devVibeRaw);
-    if (!vibe) {
-      setIsAnalyzing(false);
-      setError(
-        "Dev-Vibe 계산 실패: GitHub 데이터가 비어있거나 구조가 다릅니다."
-      );
-      setQueryUsername(null);
-      return;
-    }
-
-    const finalCode = toDashed(vibe.code); // "P-S-M" 형태로 통일
-
-    // ✅ 사용자 생성 (mock)
-    const projectExp = parseInt(formData.projectExperience) || 0;
-
-    const newUser: User = {
-      id: String(users.length + 1),
-      email: formData.email,
-      password: formData.password,
-      name: formData.name,
-      githubUsername: formData.githubUsername,
-      role: formData.role,
-      techStacks: allTechStack,
-      projectExperience: projectExp,
-      organization: formData.organization,
-      devVibeCode: finalCode,
-      isNewbie: false,
-      availableForProject: true,
-      isTeamLeader: false,
+    return () => {
+      cancelled = true;
     };
-
-    users.push(newUser);
-
-    setAnalyzedDevVibe(finalCode);
-    setIsAnalyzing(false);
-    setSuccess(true);
-    setQueryUsername(null);
   }, [
     isAnalyzing,
     queryUsername,
@@ -239,8 +256,6 @@ export default function SignupPage() {
         projectExperience: projectExp,
         organization: formData.organization,
         isNewbie: projectExp === 0,
-        availableForProject: true,
-        isTeamLeader: false,
       };
 
       users.push(newUser);
@@ -266,8 +281,6 @@ export default function SignupPage() {
         projectExperience: projectExp,
         organization: formData.organization,
         isNewbie: true,
-        availableForProject: true,
-        isTeamLeader: false,
       };
 
       users.push(newUser);
@@ -343,7 +356,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <img 
+              <img
                 src={formData.role === "designer" ? designIcon : planningIcon}
                 alt={formData.role === "designer" ? "디자이너" : "기획자"}
                 className="w-full h-full object-contain p-3"
@@ -375,7 +388,7 @@ export default function SignupPage() {
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl overflow-hidden bg-white/5">
-                <img 
+                <img
                   src={formData.role === "designer" ? designIcon : planningIcon}
                   alt={formData.role === "designer" ? "디자이너" : "기획자"}
                   className="w-full h-full object-contain p-2"
@@ -456,7 +469,7 @@ export default function SignupPage() {
     const devVibeData = getDevVibeByCode(analyzedDevVibe);
     if (!devVibeData) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6">
+        <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-start justify-center px-6 pt-24 pb-12">
           <div className="text-white">
             DevVibe 데이터 매칭 실패: {analyzedDevVibe} (mocks/devVibes에 코드가
             있는지 확인)
@@ -466,7 +479,7 @@ export default function SignupPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-start justify-center px-6 pt-24 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -480,7 +493,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <img 
+              <img
                 src={devVibeData.icon}
                 alt={devVibeData.title}
                 className="w-full h-full object-contain p-3"
@@ -512,7 +525,7 @@ export default function SignupPage() {
           >
             <div className="flex items-center gap-6 mb-6 pb-6 border-b border-white/10">
               <div className="w-20 h-20 flex items-center justify-center rounded-2xl overflow-hidden bg-white/5">
-                <img 
+                <img
                   src={devVibeData.icon}
                   alt={devVibeData.title}
                   className="w-full h-full object-contain p-2"
@@ -589,7 +602,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden bg-white/5"
             >
-              <img 
+              <img
                 src={devVibeTypes.NEWBIE.icon}
                 alt="새싹 개발자"
                 className="w-full h-full object-contain p-3"
@@ -621,7 +634,7 @@ export default function SignupPage() {
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center bg-green-500/20 rounded-2xl overflow-hidden bg-white/5">
-                <img 
+                <img
                   src={devVibeTypes.NEWBIE.icon}
                   alt="새싹 개발자"
                   className="w-full h-full object-contain p-2"
@@ -702,9 +715,7 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl"
       >
-        <div className="text-center mb-12">
-          
-        </div>
+        <div className="text-center mb-12"></div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
           <h2 className="text-2xl font-bold text-white mb-6">회원가입</h2>
