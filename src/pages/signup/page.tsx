@@ -680,11 +680,11 @@ export default function SignupPage() {
             className="inline-flex items-center gap-3 cursor-pointer group"
           >
             <img
-              src="https://public.readdy.ai/ai/img_res/726250aa-becf-4a4b-a383-e2cd269dfc36.png"
-              alt="DevMatch Logo"
+              src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/96fe11c5181c303788ed4e192691b227.png"
+              alt="깃력사무소 Logo"
               className="h-12 w-12 object-contain transition-transform duration-300 group-hover:scale-110"
             />
-            <span className="text-3xl font-bold text-white">DevMatch</span>
+            <span className="text-3xl font-bold text-white">깃력사무소</span>
           </a>
           <p className="text-gray-400 mt-4">데이터 기반 팀 매칭 플랫폼</p>
         </div>
