@@ -1,10 +1,29 @@
 import { ProjectMember } from '../../../../mocks/projects';
 import { users } from '../../../../mocks/users';
+import { devVibeTypes } from '../../../../mocks/devVibes';
+import designIcon from '@/assets/DESIGN.png';
+import planningIcon from '@/assets/PLANNING.png';
 
 interface MemberDetailModalProps {
   member: ProjectMember;
   onClose: () => void;
 }
+
+// 멤버의 역할에 따라 아이콘 가져오기
+const getMemberIcon = (userId: string, userName: string): string => {
+  const user = users.find(u => u.id === userId || u.name === userName);
+  if (!user) return "https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png";
+  
+  if (user.role === 'designer') {
+    return designIcon;
+  } else if (user.role === 'planner') {
+    return planningIcon;
+  } else {
+    // developer는 devVibe 아이콘 사용
+    const devVibe = user.devVibeCode ? devVibeTypes[user.devVibeCode] : null;
+    return devVibe?.icon || "https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png";
+  }
+};
 
 export default function MemberDetailModal({ member, onClose }: MemberDetailModalProps) {
   return (
@@ -26,9 +45,9 @@ export default function MemberDetailModal({ member, onClose }: MemberDetailModal
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-24 h-24 flex items-center justify-center rounded-full overflow-hidden bg-white/5 mb-4">
               <img 
-                src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png" 
+                src={getMemberIcon(member.userId, member.userName)} 
                 alt={member.userName}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-2"
               />
             </div>
             <h3 className="text-2xl font-bold text-white mb-2">{member.userName}</h3>
