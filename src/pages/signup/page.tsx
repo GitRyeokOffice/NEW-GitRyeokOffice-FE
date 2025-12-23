@@ -1,101 +1,230 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { users } from '../../mocks/users';
-import type { User } from '../../mocks/users';
-import { getDevVibeByCode } from '../../mocks/devVibes';
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { users } from "../../mocks/users";
+import type { User } from "../../mocks/users";
+import { getDevVibeByCode } from "../../mocks/devVibes";
+import { useDevVibe } from "@/hooks/useDevVibe";
+import { calcDevVibe } from "../../lib/calcDevVibe";
+import { useNavigate } from "react-router-dom";
+
+function toDashed(code: string) {
+  if (code.includes("-")) return code;
+  if (code.length !== 3) return code;
+  return `${code[0]}-${code[1]}-${code[2]}`;
+}
 
 export default function SignupPage() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    hasGithub: '' as 'yes' | 'no' | '',
-    githubUsername: '',
-    role: 'developer' as 'developer' | 'designer' | 'planner',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    name: "",
+    hasGithub: "" as "yes" | "no" | "",
+    githubUsername: "",
+    role: "developer" as "developer" | "designer" | "planner",
     frontendStack: [] as string[],
     backendStack: [] as string[],
     otherStack: [] as string[],
-    projectExperience: '',
-    organization: '',
-    // 디자이너/기획자 전용 필드
-    introduction: '',
-    projectTypes: '',
-    portfolio: ''
+    projectExperience: "",
+    organization: "",
+    introduction: "",
+    projectTypes: "",
+    portfolio: "",
   });
-  const [error, setError] = useState('');
+
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // ✅ “분석 트리거”용 username (버튼/submit 눌렀을 때만 쿼리 실행)
+  const [queryUsername, setQueryUsername] = useState<string | null>(null);
+
+  // ✅ 분석 중 UI 제어
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // ✅ 최종 분석 결과 코드(대시 포함)
   const [analyzedDevVibe, setAnalyzedDevVibe] = useState<string | null>(null);
 
-  // Tech stack options
-  const frontendOptions = ['React', 'Vue', 'Angular', 'Next.js', 'Svelte', 'TypeScript', 'JavaScript'];
-  const backendOptions = ['Node.js', 'Python', 'Java', 'Spring', 'Django', 'Flask', 'Go', 'Ruby'];
-  const otherOptions = ['Docker', 'Kubernetes', 'AWS', 'GCP', 'Firebase', 'MongoDB', 'PostgreSQL', 'MySQL'];
+  const {
+    data: devVibeRaw,
+    isLoading: devVibeLoading,
+    error: devVibeError,
+  } = useDevVibe(queryUsername ?? "");
 
-  // Dev Vibe codes for random assignment (simulating backend analysis)
-  const devVibeCodes = ['P-S-M', 'P-S-N', 'P-F-M', 'P-F-N', 'I-S-M', 'I-S-N', 'I-F-M', 'I-F-N'];
+  // Tech stack options
+  const frontendOptions = [
+    "React",
+    "Vue",
+    "Angular",
+    "Next.js",
+    "Svelte",
+    "TypeScript",
+    "JavaScript",
+  ];
+  const backendOptions = [
+    "Node.js",
+    "Python",
+    "Java",
+    "Spring",
+    "Django",
+    "Flask",
+    "Go",
+    "Ruby",
+  ];
+  const otherOptions = [
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "GCP",
+    "Firebase",
+    "MongoDB",
+    "PostgreSQL",
+    "MySQL",
+  ];
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleStackChange = (category: 'frontendStack' | 'backendStack' | 'otherStack', value: string) => {
+  const handleStackChange = (
+    category: "frontendStack" | "backendStack" | "otherStack",
+    value: string
+  ) => {
     const currentStack = formData[category];
     if (currentStack.includes(value)) {
       setFormData({
         ...formData,
-        [category]: currentStack.filter(item => item !== value)
+        [category]: currentStack.filter((item) => item !== value),
       });
     } else {
-      setFormData({
-        ...formData,
-        [category]: [...currentStack, value]
-      });
+      setFormData({ ...formData, [category]: [...currentStack, value] });
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const allTechStack = useMemo(
+    () => [
+      ...formData.frontendStack,
+      ...formData.backendStack,
+      ...formData.otherStack,
+    ],
+    [formData.frontendStack, formData.backendStack, formData.otherStack]
+  );
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
+  // ✅ 분석 결과가 도착하면 여기서 “실제 반영”
+  useEffect(() => {
+    if (!isAnalyzing) return;
+    if (!queryUsername) return;
+
+    if (devVibeLoading) return;
+
+    if (devVibeError) {
+      setIsAnalyzing(false);
+      setError(
+        `GitHub 분석 실패: ${
+          devVibeError instanceof Error
+            ? devVibeError.message
+            : String(devVibeError)
+        }`
+      );
+      setQueryUsername(null);
       return;
     }
 
+    if (!devVibeRaw) return;
+
+    const vibe = calcDevVibe(devVibeRaw);
+    if (!vibe) {
+      setIsAnalyzing(false);
+      setError(
+        "Dev-Vibe 계산 실패: GitHub 데이터가 비어있거나 구조가 다릅니다."
+      );
+      setQueryUsername(null);
+      return;
+    }
+
+    const finalCode = toDashed(vibe.code); // "P-S-M" 형태로 통일
+
+    // ✅ 사용자 생성 (mock)
+    const projectExp = parseInt(formData.projectExperience) || 0;
+
+    const newUser: User = {
+      id: String(users.length + 1),
+      email: formData.email,
+      password: formData.password,
+      name: formData.name,
+      githubUsername: formData.githubUsername,
+      role: formData.role,
+      techStacks: allTechStack,
+      projectExperience: projectExp,
+      organization: formData.organization,
+      devVibeCode: finalCode,
+      isNewbie: false,
+    };
+
+    users.push(newUser);
+
+    setAnalyzedDevVibe(finalCode);
+    setIsAnalyzing(false);
+    setSuccess(true);
+    setQueryUsername(null);
+  }, [
+    isAnalyzing,
+    queryUsername,
+    devVibeLoading,
+    devVibeError,
+    devVibeRaw,
+    formData.email,
+    formData.password,
+    formData.name,
+    formData.githubUsername,
+    formData.role,
+    formData.projectExperience,
+    formData.organization,
+    allTechStack,
+  ]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
     if (formData.password.length < 6) {
-      setError('비밀번호는 최소 6자 이상이어야 합니다.');
+      setError("비밀번호는 최소 6자 이상이어야 합니다.");
       return;
     }
 
     const existingUser = users.find((u) => u.email === formData.email);
     if (existingUser) {
-      setError('이미 존재하는 이메일입니다.');
+      setError("이미 존재하는 이메일입니다.");
       return;
     }
 
-    // 개발자인 경우 GitHub 계정 보유 여부 확인
-    if (formData.role === 'developer' && !formData.hasGithub) {
-      setError('GitHub 계정 보유 여부를 선택해주세요.');
+    if (formData.role === "developer" && !formData.hasGithub) {
+      setError("GitHub 계정 보유 여부를 선택해주세요.");
       return;
     }
 
-    // 개발자이고 GitHub 계정이 있는 경우 닉네임 필수
-    if (formData.role === 'developer' && formData.hasGithub === 'yes' && !formData.githubUsername) {
-      setError('GitHub 닉네임을 입력해주세요.');
+    if (
+      formData.role === "developer" &&
+      formData.hasGithub === "yes" &&
+      !formData.githubUsername
+    ) {
+      setError("GitHub 닉네임을 입력해주세요.");
       return;
     }
 
-    // 디자이너/기획자인 경우 바로 성공 처리
-    if (formData.role === 'designer' || formData.role === 'planner') {
+    // ✅ 디자이너/기획자: 즉시 성공 처리
+    if (formData.role === "designer" || formData.role === "planner") {
       const projectExp = parseInt(formData.projectExperience) || 0;
+
       const newUser: User = {
         id: String(users.length + 1),
         email: formData.email,
@@ -105,7 +234,7 @@ export default function SignupPage() {
         techStacks: [],
         projectExperience: projectExp,
         organization: formData.organization,
-        isNewbie: projectExp === 0
+        isNewbie: projectExp === 0,
       };
 
       users.push(newUser);
@@ -113,68 +242,43 @@ export default function SignupPage() {
       return;
     }
 
-    // 개발자이고 GitHub 계정이 없거나 프로젝트 경험이 0회인 경우 새싹 유형으로 고정
+    // ✅ 개발자: 새싹 처리 조건
     const projectExp = parseInt(formData.projectExperience) || 0;
-    const isNewbieUser = formData.hasGithub === 'no' || projectExp === 0;
+    const isNewbieUser = formData.hasGithub === "no" || projectExp === 0;
 
-    // GitHub 계정이 있고 프로젝트 경험이 있는 경우에만 분석 진행
-    if (formData.hasGithub === 'yes' && projectExp > 0) {
-      setIsAnalyzing(true);
-      
-      // Simulate API delay (5 seconds)
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Combine all tech stacks
-      const allTechStack = [...formData.frontendStack, ...formData.backendStack, ...formData.otherStack];
-
-      // Randomly assign Dev Vibe code (simulating backend analysis result)
-      const randomDevVibeCode = devVibeCodes[Math.floor(Math.random() * devVibeCodes.length)];
-
-      // Mock user creation
+    // 새싹이면 분석 없이 등록
+    if (isNewbieUser) {
       const newUser: User = {
         id: String(users.length + 1),
         email: formData.email,
         password: formData.password,
         name: formData.name,
-        githubUsername: formData.githubUsername,
+        githubUsername:
+          formData.hasGithub === "yes" ? formData.githubUsername : undefined,
         role: formData.role,
         techStacks: allTechStack,
         projectExperience: projectExp,
         organization: formData.organization,
-        devVibeCode: randomDevVibeCode,
-        isNewbie: false
-      };
-
-      users.push(newUser);
-      setIsAnalyzing(false);
-      setAnalyzedDevVibe(randomDevVibeCode);
-      setSuccess(true);
-    } else {
-      // 새싹 유형으로 등록
-      const allTechStack = [...formData.frontendStack, ...formData.backendStack, ...formData.otherStack];
-      
-      const newUser: User = {
-        id: String(users.length + 1),
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        githubUsername: formData.hasGithub === 'yes' ? formData.githubUsername : undefined,
-        role: formData.role,
-        techStacks: allTechStack,
-        projectExperience: projectExp,
-        organization: formData.organization,
-        isNewbie: true
+        isNewbie: true,
       };
 
       users.push(newUser);
       setSuccess(true);
+      return;
     }
+
+    // ✅ 여기부터가 “진짜 분석”
+    setIsAnalyzing(true);
+    setQueryUsername(formData.githubUsername.trim()); // ← 이 순간 useDevVibe가 실행됨
   };
 
   const handleCloseModal = () => {
-    window.REACT_APP_NAVIGATE('/login');
+    navigate("/login");
   };
 
+  // -------------------------
+  // UI: 분석 중 화면
+  // -------------------------
   if (isAnalyzing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6">
@@ -186,20 +290,36 @@ export default function SignupPage() {
           <div className="w-16 h-16 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <i className="ri-github-fill text-3xl text-neon-green"></i>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">GitHub 데이터 분석 중...</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            GitHub 데이터 분석 중...
+          </h2>
           <p className="text-gray-400 mb-4">Dev Vibe를 생성하고 있습니다</p>
           <div className="flex justify-center gap-2">
-            <div className="w-2 h-2 bg-neon-green rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-neon-green rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 bg-neon-green rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div
+              className="w-2 h-2 bg-neon-green rounded-full animate-bounce"
+              style={{ animationDelay: "0ms" }}
+            />
+            <div
+              className="w-2 h-2 bg-neon-green rounded-full animate-bounce"
+              style={{ animationDelay: "150ms" }}
+            />
+            <div
+              className="w-2 h-2 bg-neon-green rounded-full animate-bounce"
+              style={{ animationDelay: "300ms" }}
+            />
           </div>
         </motion.div>
       </div>
     );
   }
 
-  // 디자이너/기획자 환영 화면
-  if (success && (formData.role === 'designer' || formData.role === 'planner')) {
+  // -------------------------
+  // UI: 디자이너/기획자 환영 화면 (원본 유지)
+  // -------------------------
+  if (
+    success &&
+    (formData.role === "designer" || formData.role === "planner")
+  ) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6 py-12">
         <motion.div
@@ -208,7 +328,6 @@ export default function SignupPage() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="max-w-2xl w-full"
         >
-          {/* Success Icon */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -216,7 +335,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              <i className="ri-check-line text-5xl text-purple-500"></i>
+              <i className="ri-check-line text-5xl text-purple-500" />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -236,7 +355,6 @@ export default function SignupPage() {
             </motion.p>
           </div>
 
-          {/* Welcome Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -245,50 +363,68 @@ export default function SignupPage() {
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl">
-                <i className={`text-3xl text-purple-500 ${formData.role === 'designer' ? 'ri-palette-line' : 'ri-lightbulb-line'}`}></i>
+                <i
+                  className={`text-3xl text-purple-500 ${
+                    formData.role === "designer"
+                      ? "ri-palette-line"
+                      : "ri-lightbulb-line"
+                  }`}
+                />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white">
-                  {formData.role === 'designer' ? '디자이너' : '기획자'}로 등록되었습니다
+                  {formData.role === "designer" ? "디자이너" : "기획자"}로
+                  등록되었습니다
                 </h3>
-                <p className="text-gray-400">이제 프로젝트를 탐색하고 지원할 수 있습니다</p>
+                <p className="text-gray-400">
+                  이제 프로젝트를 탐색하고 지원할 수 있습니다
+                </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-search-line text-xl text-purple-500 mt-1"></i>
+                  <i className="ri-search-line text-xl text-purple-500 mt-1" />
                   <div>
-                    <h4 className="text-white font-semibold mb-1">프로젝트 탐색</h4>
-                    <p className="text-gray-400 text-sm">관심 있는 프로젝트를 찾아보세요</p>
+                    <h4 className="text-white font-semibold mb-1">
+                      프로젝트 탐색
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      관심 있는 프로젝트를 찾아보세요
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-file-list-line text-xl text-purple-500 mt-1"></i>
+                  <i className="ri-file-list-line text-xl text-purple-500 mt-1" />
                   <div>
-                    <h4 className="text-white font-semibold mb-1">자유로운 지원</h4>
-                    <p className="text-gray-400 text-sm">포트폴리오와 함께 프로젝트에 지원하세요</p>
+                    <h4 className="text-white font-semibold mb-1">
+                      자유로운 지원
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      포트폴리오와 함께 프로젝트에 지원하세요
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-team-line text-xl text-purple-500 mt-1"></i>
+                  <i className="ri-team-line text-xl text-purple-500 mt-1" />
                   <div>
                     <h4 className="text-white font-semibold mb-1">팀 매칭</h4>
-                    <p className="text-gray-400 text-sm">최적의 팀원과 함께 프로젝트를 완성하세요</p>
+                    <p className="text-gray-400 text-sm">
+                      최적의 팀원과 함께 프로젝트를 완성하세요
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Action Button */}
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -303,12 +439,20 @@ export default function SignupPage() {
     );
   }
 
-  // 개발자 Dev Vibe 결과 화면
+  // -------------------------
+  // UI: 개발자 DevVibe 결과 화면
+  // -------------------------
   if (success && analyzedDevVibe) {
     const devVibeData = getDevVibeByCode(analyzedDevVibe);
-    
     if (!devVibeData) {
-      return null;
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6">
+          <div className="text-white">
+            DevVibe 데이터 매칭 실패: {analyzedDevVibe} (mocks/devVibes에 코드가
+            있는지 확인)
+          </div>
+        </div>
+      );
     }
 
     return (
@@ -319,7 +463,6 @@ export default function SignupPage() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="max-w-3xl w-full"
         >
-          {/* Success Icon */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -327,7 +470,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              <i className="ri-check-line text-5xl text-neon-green"></i>
+              <i className="ri-check-line text-5xl text-neon-green" />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -347,45 +490,52 @@ export default function SignupPage() {
             </motion.p>
           </div>
 
-          {/* Dev Vibe Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
             className="bg-gradient-to-br from-neon-green/10 to-neon-green/5 border-2 border-neon-green/30 rounded-2xl p-8 mb-8"
           >
-            {/* Header */}
             <div className="flex items-center gap-6 mb-6 pb-6 border-b border-white/10">
               <div className="text-7xl">{devVibeData.emoji}</div>
               <div className="flex-1">
-                <div className="text-base text-neon-green font-mono mb-2">{devVibeData.code}</div>
-                <h3 className="text-3xl font-bold text-white">{devVibeData.title}</h3>
+                <div className="text-base text-neon-green font-mono mb-2">
+                  {devVibeData.code}
+                </div>
+                <h3 className="text-3xl font-bold text-white">
+                  {devVibeData.title}
+                </h3>
               </div>
             </div>
 
-            {/* Traits */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-sm text-gray-400 mb-2">계획성</div>
-                <div className="text-lg font-semibold text-white">{devVibeData.traits.planning}</div>
+                <div className="text-lg font-semibold text-white">
+                  {devVibeData.traits.planning}
+                </div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-sm text-gray-400 mb-2">작업방식</div>
-                <div className="text-lg font-semibold text-white">{devVibeData.traits.work}</div>
+                <div className="text-lg font-semibold text-white">
+                  {devVibeData.traits.work}
+                </div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-sm text-gray-400 mb-2">활동시간</div>
-                <div className="text-lg font-semibold text-white">{devVibeData.traits.time}</div>
+                <div className="text-lg font-semibold text-white">
+                  {devVibeData.traits.time}
+                </div>
               </div>
             </div>
 
-            {/* Description */}
             <div className="bg-white/5 rounded-xl p-6">
-              <p className="text-gray-300 text-base leading-relaxed">{devVibeData.description}</p>
+              <p className="text-gray-300 text-base leading-relaxed">
+                {devVibeData.description}
+              </p>
             </div>
           </motion.div>
 
-          {/* Action Button */}
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -400,8 +550,10 @@ export default function SignupPage() {
     );
   }
 
-  // 새싹 유형 환영 화면
-  if (success && formData.role === 'developer' && !analyzedDevVibe) {
+  // -------------------------
+  // UI: 새싹 유형 환영 화면 (원본 유지)
+  // -------------------------
+  if (success && formData.role === "developer" && !analyzedDevVibe) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6 py-12">
         <motion.div
@@ -410,7 +562,6 @@ export default function SignupPage() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="max-w-2xl w-full"
         >
-          {/* Success Icon */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0 }}
@@ -418,7 +569,7 @@ export default function SignupPage() {
               transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
               className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
             >
-              <i className="ri-seedling-line text-5xl text-green-500"></i>
+              <i className="ri-seedling-line text-5xl text-green-500" />
             </motion.div>
             <motion.h2
               initial={{ opacity: 0 }}
@@ -438,7 +589,6 @@ export default function SignupPage() {
             </motion.p>
           </div>
 
-          {/* Newbie Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -447,7 +597,7 @@ export default function SignupPage() {
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center bg-green-500/20 rounded-2xl">
-                <i className="ri-seedling-line text-3xl text-green-500"></i>
+                <i className="ri-seedling-line text-3xl text-green-500" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white">새싹 개발자</h3>
@@ -458,37 +608,48 @@ export default function SignupPage() {
             <div className="space-y-4">
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-lightbulb-line text-xl text-green-500 mt-1"></i>
+                  <i className="ri-lightbulb-line text-xl text-green-500 mt-1" />
                   <div>
-                    <h4 className="text-white font-semibold mb-1">프로젝트 시작</h4>
-                    <p className="text-gray-400 text-sm">관심 있는 프로젝트에 참여하여 경험을 쌓아보세요</p>
+                    <h4 className="text-white font-semibold mb-1">
+                      프로젝트 시작
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      관심 있는 프로젝트에 참여하여 경험을 쌓아보세요
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-team-line text-xl text-green-500 mt-1"></i>
+                  <i className="ri-team-line text-xl text-green-500 mt-1" />
                   <div>
-                    <h4 className="text-white font-semibold mb-1">팀원과 협업</h4>
-                    <p className="text-gray-400 text-sm">다양한 팀원들과 함께 성장하는 기회를 만들어보세요</p>
+                    <h4 className="text-white font-semibold mb-1">
+                      팀원과 협업
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      다양한 팀원들과 함께 성장하는 기회를 만들어보세요
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white/5 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <i className="ri-trophy-line text-xl text-green-500 mt-1"></i>
+                  <i className="ri-trophy-line text-xl text-green-500 mt-1" />
                   <div>
-                    <h4 className="text-white font-semibold mb-1">Dev Vibe 획득</h4>
-                    <p className="text-gray-400 text-sm">프로젝트 경험을 쌓으면 나만의 Dev Vibe를 얻을 수 있어요</p>
+                    <h4 className="text-white font-semibold mb-1">
+                      Dev Vibe 획득
+                    </h4>
+                    <p className="text-gray-400 text-sm">
+                      프로젝트 경험을 쌓으면 나만의 Dev Vibe를 얻을 수 있어요
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Action Button */}
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -503,6 +664,9 @@ export default function SignupPage() {
     );
   }
 
+  // -------------------------
+  // UI: 가입 폼 (원본 유지, 에러만 표시)
+  // -------------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 flex items-center justify-center px-6 py-12">
       <motion.div
@@ -510,9 +674,11 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl"
       >
-        {/* Logo */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-3 cursor-pointer group">
+          <a
+            href="/"
+            className="inline-flex items-center gap-3 cursor-pointer group"
+          >
             <img
               src="https://public.readdy.ai/ai/img_res/726250aa-becf-4a4b-a383-e2cd269dfc36.png"
               alt="DevMatch Logo"
@@ -523,12 +689,10 @@ export default function SignupPage() {
           <p className="text-gray-400 mt-4">데이터 기반 팀 매칭 플랫폼</p>
         </div>
 
-        {/* Signup Form */}
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
           <h2 className="text-2xl font-bold text-white mb-6">회원가입</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -561,7 +725,6 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -594,7 +757,6 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Role */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 직무 <span className="text-red-400">*</span>
@@ -606,61 +768,76 @@ export default function SignupPage() {
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-neon-green transition-colors text-sm cursor-pointer"
                 required
               >
-                <option value="developer" className="bg-navy-800">개발자</option>
-                <option value="designer" className="bg-navy-800">디자이너</option>
-                <option value="planner" className="bg-navy-800">기획자</option>
+                <option value="developer" className="bg-navy-800">
+                  개발자
+                </option>
+                <option value="designer" className="bg-navy-800">
+                  디자이너
+                </option>
+                <option value="planner" className="bg-navy-800">
+                  기획자
+                </option>
               </select>
             </div>
 
-            {/* 개발자 전용 필드 */}
-            {formData.role === 'developer' && (
+            {formData.role === "developer" && (
               <>
-                {/* GitHub 계정 보유 여부 */}
                 <div className="bg-neon-green/5 border-2 border-neon-green/30 rounded-xl p-4">
                   <label className="block text-sm font-medium text-neon-green mb-3 flex items-center gap-2">
-                    <i className="ri-github-fill"></i>
-                    GitHub 계정을 가지고 있나요? <span className="text-red-400">*</span>
+                    <i className="ri-github-fill" />
+                    GitHub 계정을 가지고 있나요?{" "}
+                    <span className="text-red-400">*</span>
                   </label>
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, hasGithub: 'yes' })}
+                      onClick={() =>
+                        setFormData({ ...formData, hasGithub: "yes" })
+                      }
                       className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer whitespace-nowrap ${
-                        formData.hasGithub === 'yes'
-                          ? 'bg-neon-green text-navy-900'
-                          : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        formData.hasGithub === "yes"
+                          ? "bg-neon-green text-navy-900"
+                          : "bg-white/5 text-gray-300 hover:bg-white/10"
                       }`}
                     >
                       예
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, hasGithub: 'no', githubUsername: '' })}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          hasGithub: "no",
+                          githubUsername: "",
+                        })
+                      }
                       className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer whitespace-nowrap ${
-                        formData.hasGithub === 'no'
-                          ? 'bg-neon-green text-navy-900'
-                          : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        formData.hasGithub === "no"
+                          ? "bg-neon-green text-navy-900"
+                          : "bg-white/5 text-gray-300 hover:bg-white/10"
                       }`}
                     >
                       아니오
                     </button>
                   </div>
                   <p className="text-xs text-gray-400 mt-3 flex items-start gap-2">
-                    <i className="ri-information-line text-neon-green mt-0.5"></i>
-                    <span>GitHub 계정이 없거나 프로젝트 경험이 없으면 새싹 유형으로 등급이 고정됩니다</span>
+                    <i className="ri-information-line text-neon-green mt-0.5" />
+                    <span>
+                      GitHub 계정이 없거나 프로젝트 경험이 없으면 새싹 유형으로
+                      등급이 고정됩니다
+                    </span>
                   </p>
                 </div>
 
-                {/* GitHub Username - Only show if has GitHub */}
-                {formData.hasGithub === 'yes' && (
+                {formData.hasGithub === "yes" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                      <i className="ri-user-line"></i>
+                      <i className="ri-user-line" />
                       GitHub 닉네임 <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i className="ri-at-line text-gray-400"></i>
+                        <i className="ri-at-line text-gray-400" />
                       </div>
                       <input
                         type="text"
@@ -673,12 +850,12 @@ export default function SignupPage() {
                       />
                     </div>
                     <p className="text-xs text-gray-400 mt-2">
-                      GitHub 데이터를 분석하여 당신의 Dev Vibe를 자동으로 생성합니다
+                      GitHub 데이터를 분석하여 당신의 Dev Vibe를 자동으로
+                      생성합니다
                     </p>
                   </div>
                 )}
 
-                {/* Tech Stack - Frontend */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     프론트엔드 기술 스택
@@ -688,11 +865,11 @@ export default function SignupPage() {
                       <button
                         key={tech}
                         type="button"
-                        onClick={() => handleStackChange('frontendStack', tech)}
+                        onClick={() => handleStackChange("frontendStack", tech)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer whitespace-nowrap ${
                           formData.frontendStack.includes(tech)
-                            ? 'bg-neon-green text-navy-900'
-                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                            ? "bg-neon-green text-navy-900"
+                            : "bg-white/5 text-gray-300 hover:bg-white/10"
                         }`}
                       >
                         {tech}
@@ -701,7 +878,6 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Tech Stack - Backend */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     백엔드 기술 스택
@@ -711,11 +887,11 @@ export default function SignupPage() {
                       <button
                         key={tech}
                         type="button"
-                        onClick={() => handleStackChange('backendStack', tech)}
+                        onClick={() => handleStackChange("backendStack", tech)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer whitespace-nowrap ${
                           formData.backendStack.includes(tech)
-                            ? 'bg-neon-green text-navy-900'
-                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                            ? "bg-neon-green text-navy-900"
+                            : "bg-white/5 text-gray-300 hover:bg-white/10"
                         }`}
                       >
                         {tech}
@@ -724,7 +900,6 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Tech Stack - Other */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     기타 기술 스택
@@ -734,11 +909,11 @@ export default function SignupPage() {
                       <button
                         key={tech}
                         type="button"
-                        onClick={() => handleStackChange('otherStack', tech)}
+                        onClick={() => handleStackChange("otherStack", tech)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer whitespace-nowrap ${
                           formData.otherStack.includes(tech)
-                            ? 'bg-neon-green text-navy-900'
-                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                            ? "bg-neon-green text-navy-900"
+                            : "bg-white/5 text-gray-300 hover:bg-white/10"
                         }`}
                       >
                         {tech}
@@ -749,10 +924,8 @@ export default function SignupPage() {
               </>
             )}
 
-            {/* 디자이너/기획자 전용 필드 */}
-            {(formData.role === 'designer' || formData.role === 'planner') && (
+            {(formData.role === "designer" || formData.role === "planner") && (
               <>
-                {/* 소개 문구 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     소개 문구 <span className="text-red-400">*</span>
@@ -768,10 +941,10 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* 진행했던 프로젝트 유형 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    내가 진행했던 프로젝트 유형 <span className="text-red-400">*</span>
+                    내가 진행했던 프로젝트 유형{" "}
+                    <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -784,10 +957,10 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* 포트폴리오 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    나를 증명할 수 있는 포트폴리오 <span className="text-red-400">*</span>
+                    나를 증명할 수 있는 포트폴리오{" "}
+                    <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="url"
@@ -802,7 +975,6 @@ export default function SignupPage() {
               </>
             )}
 
-            {/* Project Experience */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 프로젝트 경험 횟수 <span className="text-red-400">*</span>
@@ -822,7 +994,6 @@ export default function SignupPage() {
               </p>
             </div>
 
-            {/* Organization (Optional) */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 소속 (선택)
@@ -837,14 +1008,12 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               className="w-full py-3 bg-neon-green text-navy-900 rounded-lg font-semibold hover:bg-neon-green/90 transition-all duration-300 cursor-pointer whitespace-nowrap"
@@ -853,10 +1022,9 @@ export default function SignupPage() {
             </button>
           </form>
 
-          {/* Login Link */}
           <div className="text-center mt-6">
             <p className="text-gray-400">
-              이미 계정이 있으신가요?{' '}
+              이미 계정이 있으신가요?{" "}
               <a
                 href="/login"
                 className="text-neon-green hover:underline cursor-pointer whitespace-nowrap"
