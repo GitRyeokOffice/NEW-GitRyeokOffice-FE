@@ -674,19 +674,8 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl"
       >
-        <div className="text-center mb-8">
-          <a
-            href="/"
-            className="inline-flex items-center gap-3 cursor-pointer group"
-          >
-            <img
-              src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/96fe11c5181c303788ed4e192691b227.png"
-              alt="깃력사무소 Logo"
-              className="h-12 w-12 object-contain transition-transform duration-300 group-hover:scale-110"
-            />
-            <span className="text-3xl font-bold text-white">깃력사무소</span>
-          </a>
-          <p className="text-gray-400 mt-4">데이터 기반 팀 매칭 플랫폼</p>
+        <div className="text-center mb-12">
+          
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
