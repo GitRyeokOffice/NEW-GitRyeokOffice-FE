@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { devVibeTypes } from '../../../mocks/devVibes';
 
 export default function HeroSection() {
   return (
@@ -79,11 +80,11 @@ export default function HeroSection() {
                 className="absolute -left-8 top-0 w-72 h-96 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 shadow-2xl transform rotate-[-8deg] z-[1]"
               >
                 <div className="flex flex-col h-full">
-                  <div className="w-16 h-16 flex items-center justify-center bg-neon-green/20 rounded-2xl mb-4 overflow-hidden">
+                  <div className="w-16 h-16 flex items-center justify-center bg-neon-green/20 rounded-2xl mb-4 overflow-hidden bg-white/5">
                     <img 
-                      src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png" 
-                      alt="Profile"
-                      className="w-full h-full object-cover"
+                      src={devVibeTypes['P-S-M'].icon} 
+                      alt="차분한 설계자"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">차분한 설계자</h3>
@@ -101,11 +102,11 @@ export default function HeroSection() {
                 className="relative z-[2] w-72 h-96 bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-3xl border border-white/30 p-6 shadow-2xl"
               >
                 <div className="flex flex-col h-full">
-                  <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl mb-4 overflow-hidden">
+                  <div className="w-16 h-16 flex items-center justify-center bg-purple-500/20 rounded-2xl mb-4 overflow-hidden bg-white/5">
                     <img 
-                      src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png" 
-                      alt="Profile"
-                      className="w-full h-full object-cover"
+                      src={devVibeTypes['I-F-M'].icon} 
+                      alt="번뜩이는 개척자"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">번뜩이는 개척자</h3>
@@ -127,11 +128,11 @@ export default function HeroSection() {
                 className="absolute -right-8 bottom-0 w-72 h-96 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 p-6 shadow-2xl transform rotate-[8deg] z-[3]"
               >
                 <div className="flex flex-col h-full">
-                  <div className="w-16 h-16 flex items-center justify-center bg-orange-500/20 rounded-2xl mb-4 overflow-hidden">
+                  <div className="w-16 h-16 flex items-center justify-center bg-orange-500/20 rounded-2xl mb-4 overflow-hidden bg-white/5">
                     <img 
-                      src="https://static.readdy.ai/image/acf8fc365223a7d2bd60db95c29d6240/898ae36fcd7ef66311cd7567104e6f57.png" 
-                      alt="Profile"
-                      className="w-full h-full object-cover"
+                      src={devVibeTypes['I-F-N'].icon} 
+                      alt="은밀한 해결사"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">은밀한 해결사</h3>

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import highFive from '@/assets/highFive.png';
 
 export default function SolutionSection() {
   return (
@@ -35,7 +36,7 @@ export default function SolutionSection() {
               <div 
                 className="w-full h-[500px] rounded-3xl shadow-2xl"
                 style={{
-                  backgroundImage: `url('https://readdy.ai/api/search-image?query=modern%20developer%20workspace%20laptop%20coding%20github%20interface%20clean%20desk%20minimal%20setup%20natural%20light%20professional%20environment%20technology%20programming%20screen%20display&width=800&height=1000&seq=solution-visual-001&orientation=portrait')`,
+                  backgroundImage: `url(${highFive})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   objectFit: 'cover',
@@ -43,17 +44,7 @@ export default function SolutionSection() {
               ></div>
               
               {/* Overlay Labels */}
-              <div className="absolute top-6 left-6 flex flex-wrap gap-3">
-                <div className="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
-                  <span className="text-sm font-semibold text-navy-900">🤖 AI 추천</span>
-                </div>
-                <div className="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
-                  <span className="text-sm font-semibold text-navy-900">⚡ 실시간 매칭</span>
-                </div>
-                <div className="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
-                  <span className="text-sm font-semibold text-navy-900">🌱 새싹 환영</span>
-                </div>
-              </div>
+              
             </div>
           </motion.div>
 

@@ -1,10 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import psmIcon from '../../assets/PSM.png';
+import { users } from '../../mocks/users';
+import { devVibeTypes } from '../../mocks/devVibes';
+import designIcon from '@/assets/DESIGN.png';
+import planningIcon from '@/assets/PLANNING.png';
 
 interface User {
   id: string;
   name: string;
   email: string;
+  role?: 'developer' | 'designer' | 'planner';
+  devVibeCode?: string;
   [key: string]: any;
 }
 
@@ -29,7 +36,14 @@ export default function Navbar() {
         if (user) {
           const parsedUser = JSON.parse(user);
           if (parsedUser && parsedUser.name) {
-            setCurrentUser(parsedUser);
+            // users 배열에서 최신 사용자 정보 가져오기
+            const latestUser = users.find(u => u.id === parsedUser.id || u.email === parsedUser.email);
+            if (latestUser) {
+              setCurrentUser(latestUser);
+              localStorage.setItem('currentUser', JSON.stringify(latestUser));
+            } else {
+              setCurrentUser(parsedUser);
+            }
           } else {
             setCurrentUser(null);
           }
@@ -70,6 +84,23 @@ export default function Navbar() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // 사용자의 역할에 따라 아이콘 가져오기
+  const getUserIcon = (): string => {
+    if (!currentUser) return "";
+    
+    if (currentUser.role === 'designer') {
+      return designIcon;
+    } else if (currentUser.role === 'planner') {
+      return planningIcon;
+    } else {
+      // developer는 devVibe 아이콘 사용
+      const devVibe = currentUser.devVibeCode ? devVibeTypes[currentUser.devVibeCode] : null;
+      return devVibe?.icon || "";
+    }
+  };
+
+  const userIcon = getUserIcon();
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -80,10 +111,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 cursor-pointer">
-            <div className="w-10 h-10 flex items-center justify-center bg-lime-400 rounded-xl">
-              <i className="ri-code-s-slash-line text-2xl text-gray-900"></i>
-            </div>
-            <span className="text-2xl font-bold text-white">DevMatch</span>
+            <img src={psmIcon} alt="깃력사무소 Logo" className="h-12 w-12 object-contain" />
+            <span className="text-2xl font-bold text-white">깃력사무소</span>
           </Link>
 
           {/* Navigation Links */}
@@ -135,7 +164,17 @@ export default function Navbar() {
             {currentUser ? (
               <>
                 <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/10">
-                  <i className="ri-user-line text-lime-400"></i>
+                  {userIcon ? (
+                    <div className="w-6 h-6 flex items-center justify-center rounded-full overflow-hidden bg-white/5">
+                      <img 
+                        src={userIcon} 
+                        alt={currentUser.name}
+                        className="w-full h-full object-contain p-0.5"
+                      />
+                    </div>
+                  ) : (
+                    <i className="ri-user-line text-lime-400"></i>
+                  )}
                   <span className="text-white text-sm">{currentUser.name}</span>
                 </div>
                 <button
